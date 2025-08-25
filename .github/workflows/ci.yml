@@ -88,25 +88,7 @@ jobs:
               }
           }
 
-      # 🔟 Build API module with Gradle (optional if GT UI tests already build it)
-      - name: Build API JAR
-        shell: pwsh
-        run: |
-          Write-Host "Running Gradle Wrapper to build api.jar"
-          .\gradlew.bat build --build-cache
-
-      # 1️⃣1️⃣ Verify api.jar exists
-      - name: Verify api.jar
-        shell: pwsh
-        run: |
-          $jarPath = ".\api\build\libs\api.jar"
-          if (-not (Test-Path $jarPath)) {
-              Write-Error "api.jar not found at $jarPath. Gradle build might have failed."
-              exit 1
-          } else {
-              Write-Host "api.jar found at $jarPath"
-          }
-
+     
       # 1️⃣2️⃣ Run GT UI Tests
       - name: Run GT UI Tests
         shell: pwsh
