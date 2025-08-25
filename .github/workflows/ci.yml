@@ -71,6 +71,17 @@ jobs:
         shell: pwsh
         run: icacls .\gradlew.bat /grant Everyone:F
 
+      # 8️⃣2️⃣ Cache Gradle dependencies
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            C:\Users\runneradmin\.gradle\caches
+            C:\Users\runneradmin\.gradle\wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
       # 9️⃣ Install npm dependencies with retry
       - name: Install npm dependencies
         shell: pwsh
@@ -95,6 +106,9 @@ jobs:
 
       # 1️⃣2️⃣ Run GT UI Tests
       - name: Run GT UI Tests
+        shell: pwsh
+        working-directory: ${{ github.workspace }}
+        run: npm run gt-ui-tests -- --cucumberTags=@add_activity
         shell: pwsh
         working-directory: ${{ github.workspace }}
         run: npm run gt-ui-tests -- --cucumberTags=@add_activity
