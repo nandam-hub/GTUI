@@ -9,7 +9,7 @@ on:
 jobs:
   build-and-test:
     runs-on: windows-latest
-    timeout-minutes: 90  # Increased for VS install + Gradle build
+    timeout-minutes: 90
 
     steps:
       # 1️⃣ Checkout repo
@@ -66,7 +66,7 @@ jobs:
               exit 1
           }
 
-      # 9️⃣ Install npm dependencies with retry to handle 429 errors
+      # 9️⃣ Install npm dependencies with retry
       - name: Install npm dependencies
         shell: pwsh
         run: |
@@ -88,7 +88,12 @@ jobs:
               }
           }
 
-    
+      # 🔟 Build API module with Gradle (optional if GT UI tests already build it)
+      - name: Build API JAR
+        shell: pwsh
+        run: |
+          Write-Host "Running Gradle Wrapper to build api.jar"
+          .\gradlew.bat build --build-cache
 
       # 1️⃣1️⃣ Verify api.jar exists
       - name: Verify api.jar
@@ -102,9 +107,8 @@ jobs:
               Write-Host "api.jar found at $jarPath"
           }
 
-      # 1️⃣2️⃣ Run GT UI Tests (TestCafe)
-      - name: Run UI tests (TestCafe)
+      # 1️⃣2️⃣ Run GT UI Tests
+      - name: Run GT UI Tests
         shell: pwsh
-        run: |
-          Write-Host "Running GT UI Tests"
-          npm run gt-ui-tests -- --cucumberTags=@add_activity
+        working-directory: ${{ github.workspace }}
+        run: npm run gt-ui-tests -- --cucumberTags=@add_activity
