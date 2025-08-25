@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI
 
 on:
   push:
@@ -7,55 +7,91 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+  build-and-test:
+    runs-on: windows-latest
+    timeout-minutes: 90  # Increased for VS install + Gradle build
 
     steps:
+      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Java (Amazon Corretto 11)
-      - name: Set up Amazon Corretto 11
+      # 2️⃣ Install VS2019 Build Tools
+      - name: Install VS2019 Build Tools
+        run: choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.19041 --includeRecommended --includeOptional --quiet --norestart" --yes
+
+      # 3️⃣ Setup MSBuild 2019
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '[16.0,17.0)'
+
+      # 4️⃣ Setup JDK 11 (Amazon Corretto)
+      - name: Set up JDK 11 (Corretto)
         uses: actions/setup-java@v4
         with:
-          distribution: corretto
-          java-version: 11
+          java-version: '11'
+          distribution: 'corretto'
 
-      # Node.js 16.3
-      - name: Set up Node.js 16.3
+      # 5️⃣ Setup Node.js 16.3.0
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 16.3.0
+          node-version: '16.3.0'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
 
-      # Python 3.10
-      - name: Set up Python 3.10
+      # 6️⃣ Setup Python 3.10
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.10
+          python-version: '3.10'
 
-      # Install dependencies
-      - name: Install Node dependencies
-        run: npm install
+      # 7️⃣ Configure node-gyp to use VS2019
+      - name: Configure node-gyp
+        run: npm config set msvs_version 2019
 
-      # Build API JAR
+      # 8️⃣ Ensure Gradle wrapper is present
+      - name: Check Gradle Wrapper
+        shell: pwsh
+        run: |
+          Write-Host "Listing gradle\wrapper contents"
+          Get-ChildItem gradle\wrapper
+          if (-not (Test-Path .\gradlew.bat)) {
+              Write-Error "gradlew.bat not found! Ensure wrapper is committed."
+              exit 1
+          }
+          if (-not (Test-Path .\gradle\wrapper\gradle-wrapper.jar)) {
+              Write-Error "gradle-wrapper.jar not found! Ensure wrapper is committed."
+              exit 1
+          }
+
+      # 9️⃣ Install npm dependencies
+      - name: Install npm dependencies
+        run: npm ci
+
+      # 🔟 Build API module with Gradle
       - name: Build API JAR
-        run: ./gradlew clean :api:createApiJar --build-cache
+        shell: pwsh
+        run: |
+          Write-Host "Running Gradle Wrapper to build api.jar"
+          .\gradlew.bat :api:createApiJar --build-cache
 
-      # Save JAR artifact
-      - name: Upload API JAR artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-jar
-          path: api/build/libs/*.jar
+      # 1️⃣1️⃣ Verify api.jar exists
+      - name: Verify api.jar
+        shell: pwsh
+        run: |
+          $jarPath = ".\api\build\libs\api.jar"
+          if (-not (Test-Path $jarPath)) {
+              Write-Error "api.jar not found at $jarPath. Gradle build might have failed."
+              exit 1
+          } else {
+              Write-Host "api.jar found at $jarPath"
+          }
 
-      # Run UI Tests with Cucumber tag
-      - name: Run UI Tests
-        run: npm run gt-ui-tests -- --cucumberTags=@add_activity
-
-      # Save test reports
-      - name: Upload test reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: reports
-          path: reports/
+      # 1️⃣2️⃣ Run GT UI Tests (TestCafe)
+      - name: Run UI tests (TestCafe)
+        shell: pwsh
+        run: |
+          Write-Host "Running GT UI Tests"
+          npm run gt-ui-tests -- --cucumberTags=@add_activity
