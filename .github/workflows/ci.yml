@@ -108,6 +108,4 @@ jobs:
         shell: pwsh
         working-directory: ${{ github.workspace }}
         run: npm run gt-ui-tests -- --cucumberTags=@add_activity
-        shell: pwsh
-        working-directory: ${{ github.workspace }}
         run: npm run gt-ui-tests -- --cucumberTags=@add_activity
