@@ -66,6 +66,11 @@ jobs:
               exit 1
           }
 
+      # 8️⃣1️⃣ Make Gradle wrapper executable
+      - name: Make Gradle wrapper executable
+        shell: pwsh
+        run: icacls .\gradlew.bat /grant Everyone:F
+
       # 9️⃣ Install npm dependencies with retry
       - name: Install npm dependencies
         shell: pwsh
@@ -88,7 +93,6 @@ jobs:
               }
           }
 
-     
       # 1️⃣2️⃣ Run GT UI Tests
       - name: Run GT UI Tests
         shell: pwsh
