@@ -38,8 +38,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '16.3.0'
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
 
       # 6️⃣ Setup Python 3.10
       - name: Set up Python
@@ -66,23 +64,24 @@ jobs:
               exit 1
           }
 
-      # 8️⃣1️⃣ Make Gradle wrapper executable
+      # 9️⃣ Make Gradle wrapper executable
       - name: Make Gradle wrapper executable
         shell: pwsh
         run: icacls .\gradlew.bat /grant Everyone:F
 
-      # 8️⃣2️⃣ Cache Gradle dependencies
-      - name: Cache Gradle
+      # 🔹 Combined Cache for Node and Gradle
+      - name: Cache Node and Gradle
         uses: actions/cache@v3
         with:
           path: |
+            ~/.npm
             C:\Users\runneradmin\.gradle\caches
             C:\Users\runneradmin\.gradle\wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: combined-${{ runner.os }}-${{ hashFiles('**/package-lock.json', '**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
-            gradle-${{ runner.os }}-
+            combined-${{ runner.os }}-
 
-      # 9️⃣ Install npm dependencies with retry
+      # 🔹 Install npm dependencies with retry
       - name: Install npm dependencies
         shell: pwsh
         run: |
@@ -104,7 +103,7 @@ jobs:
               }
           }
 
-      # 1️⃣2️⃣ Run GT UI Tests
+      # 🔹 Run GT UI Tests
       - name: Run GT UI Tests
         shell: pwsh
         working-directory: ${{ github.workspace }}
