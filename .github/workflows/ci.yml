@@ -49,20 +49,24 @@ jobs:
       - name: Configure node-gyp
         run: npm config set msvs_version 2019
 
-      # 8️⃣ Ensure Gradle wrapper is present
-      - name: Check Gradle Wrapper
+      # 8️⃣ Fail-fast Gradle wrapper check
+      - name: Fail if Gradle wrapper is missing
         shell: pwsh
         run: |
-          Write-Host "Listing gradle\wrapper contents"
-          Get-ChildItem gradle\wrapper
-          if (-not (Test-Path .\gradlew.bat)) {
-              Write-Error "gradlew.bat not found! Ensure wrapper is committed."
+          $gradlewBat = ".\gradlew.bat"
+          $gradleJar = ".\gradle\wrapper\gradle-wrapper.jar"
+
+          if (-not (Test-Path $gradlewBat)) {
+              Write-Error "gradlew.bat is missing! Commit it to the repo."
               exit 1
           }
-          if (-not (Test-Path .\gradle\wrapper\gradle-wrapper.jar)) {
-              Write-Error "gradle-wrapper.jar not found! Ensure wrapper is committed."
+
+          if (-not (Test-Path $gradleJar)) {
+              Write-Error "gradle-wrapper.jar is missing! Commit gradle/wrapper folder to the repo."
               exit 1
           }
+
+          Write-Host "Gradle wrapper files are present."
 
       # 9️⃣ Make Gradle wrapper executable
       - name: Make Gradle wrapper executable
