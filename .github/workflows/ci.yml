@@ -88,12 +88,7 @@ jobs:
               }
           }
 
-      # 🔟 Build API module with Gradle (generates api.jar)
-      - name: Build API JAR
-        shell: pwsh
-        run: |
-          Write-Host "Running Gradle Wrapper to build api.jar"
-          .\gradlew.bat build --build-cache
+    
 
       # 1️⃣1️⃣ Verify api.jar exists
       - name: Verify api.jar
