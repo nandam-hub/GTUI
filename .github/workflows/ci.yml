@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Fail-fast Gradle wrapper check
+      # 2️⃣ Fail-fast Gradle wrapper check (fixed PowerShell syntax)
       - name: Verify Gradle wrapper
         shell: pwsh
         run: |
@@ -26,7 +26,10 @@ jobs:
           if (-not (Test-Path "./gradlew.bat")) { Write-Error "❌ gradlew.bat missing in repo root"; exit 1 }
           if (-not (Test-Path "./gradle/wrapper/gradle-wrapper.jar")) { Write-Error "❌ gradle-wrapper.jar missing"; exit 1 }
           if (-not (Test-Path "./gradle/wrapper/gradle-wrapper.properties")) { Write-Error "❌ gradle-wrapper.properties missing"; exit 1 }
-          if (Test-Path "./gradle/wrapper/gradlew" -or Test-Path "./gradle/wrapper/gradlew.bat") { Write-Error "❌ Duplicate wrapper scripts inside gradle/wrapper! Remove them."; exit 1 }
+          if ((Test-Path "./gradle/wrapper/gradlew") -or (Test-Path "./gradle/wrapper/gradlew.bat")) {
+              Write-Error "❌ Duplicate wrapper scripts inside gradle/wrapper! Remove them."
+              exit 1
+          }
           Write-Host "✅ Gradle wrapper check passed."
 
       # 3️⃣ Install VS2019 Build Tools
@@ -97,7 +100,7 @@ jobs:
               }
           }
 
-      # 🔹 Run fresh Gradle build if triggered manually
+      # 🔹 Run fresh Gradle build if manually triggered
       - name: Gradle fresh build
         if: github.event_name == 'workflow_dispatch'
         shell: pwsh
